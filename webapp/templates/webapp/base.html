@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}AutoService{% endblock %}</title>
+</head>
+<body>
+    <nav>
+        <a href="{% url 'webapp:home' %}">Home</a>
+
+        {% if user.is_authenticated %}
+            <a href="{% url 'webapp:booking-list' %}">
+                My bookings
+            </a>
+
+            <form
+                method="post"
+                action="{% url 'webapp:logout' %}"
+                style="display: inline;"
+            >
+                {% csrf_token %}
+                <button type="submit">Logout</button>
+            </form>
+        {% else %}
+            <a href="{% url 'webapp:login' %}">Login</a>
+        {% endif %}
+    </nav>
+
+    <div id="notifications"></div>
+
+    {% block content %}
+    {% endblock %}
+
+    {% if user.is_authenticated %}
+        <script>
+            const protocol =
+                window.location.protocol === "https:"
+                    ? "wss"
+                    : "ws";
+
+            const socket = new WebSocket(
+                `${protocol}://${window.location.host}/ws/notifications/`
+            );
+
+            socket.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                const container =
+                    document.getElementById("notifications");
+
+                const message = document.createElement("p");
+                message.textContent = data.message;
+                container.prepend(message);
+            };
+
+            socket.onclose = function () {
+                console.log("Notification socket closed.");
+            };
+        </script>
+    {% endif %}
+</body>
+</html>

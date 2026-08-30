@@ -1,0 +1,44 @@
+
+{% extends "webapp/base.html" %}
+
+{% block title %}AutoService{% endblock %}
+
+{% block content %}
+    <!-- eski home.html kontenti shu yerda -->
+{% endblock %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AutoService</title>
+</head>
+<body>
+    <h1>AutoService</h1>
+
+    <h2>Service centres</h2>
+
+    {% for centre in centres %}
+        <div>
+            <h3>{{ centre.name }}</h3>
+            <p>{{ centre.address }}</p>
+            <p>{{ centre.phone_number }}</p>
+        </div>
+    {% empty %}
+        <p>No service centres are available.</p>
+    {% endfor %}
+
+    <h2>Available services</h2>
+
+    {% for service in services %}
+        <div>
+            <h3>{{ service.name }}</h3>
+            <p>Centre: {{ service.service_centre.name }}</p>
+            <p>Category: {{ service.category.name }}</p>
+            <p>Price: {{ service.price }}</p>
+            <p>Duration: {{ service.duration_minutes }} minutes</p>
+        </div>
+    {% empty %}
+        <p>No services are available.</p>
+    {% endfor %}
+</body>
+</html>

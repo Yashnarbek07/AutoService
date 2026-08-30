@@ -1,0 +1,23 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}My bookings{% endblock %}
+
+{% block content %}
+    <h1>My bookings</h1>
+
+    {% for booking in bookings %}
+        <div>
+            <h3>{{ booking.auto_service.name }}</h3>
+            <p>Vehicle: {{ booking.vehicle }}</p>
+            <p>Date: {{ booking.booking_date }}</p>
+            <p>Time: {{ booking.booking_time }}</p>
+            <p>Status: {{ booking.get_status_display }}</p>
+
+            {% if booking.mechanic %}
+                <p>Mechanic: {{ booking.mechanic }}</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>You do not have any bookings.</p>
+    {% endfor %}
+{% endblock %}
