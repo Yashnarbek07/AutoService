@@ -141,7 +141,7 @@ class MechanicProfileSerializer(serializers.ModelSerializer):
             "user",
             "username",
             "full_name",
-            "service_center",
+            "service_centre",
             "service_centre_name",
             "specialization",
             "experience_years",

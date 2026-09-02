@@ -86,27 +86,30 @@ class ClientBookingSerializer(serializers.ModelSerializer):
 
 class BookingStatusSerializer(serializers.ModelSerializer):
     class Meta:
+        model = Booking
         fields = (
-            'status',
-            'mechanic'
+            "status",
+            "mechanic",
         )
 
-        def validate(self, attrs):
-            status = attrs.get(
-                'status',
-                getattr(self.instance, None)
-            )
+    def validate(self, attrs):
+        status_value = attrs.get(
+            "status",
+            self.instance.status if self.instance else None,
+        )
+        mechanic = attrs.get(
+            "mechanic",
+            self.instance.mechanic if self.instance else None,
+        )
 
-            mechanic = attrs.get(
-                'mechanic',
-                getattr(self.instance, None)
-            )
+        if (
+            status_value == Booking.Status.ACCEPTED
+            and mechanic is None
+        ):
+            raise serializers.ValidationError({
+                "mechanic": (
+                    "Booking cannot be accepted without a mechanic."
+                )
+            })
 
-            if status.ACCEPTED and mechanic is None:
-                raise serializers.ValidationError({
-                    'mechanic' : (
-                        'Status cant be accepted if there is no mechanic.'
-                    )
-                })
-            return attrs
-
+        return attrs

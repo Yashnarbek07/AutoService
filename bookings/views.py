@@ -51,15 +51,14 @@ class BookingViewSet(ModelViewSet):
         if self.request.user.is_staff:
             return queryset
 
-        return queryset.filter(Q(client=self.request.user) | Q(mechanic__user = self.request.user)).distinct()
+        return queryset.filter(
+            Q(client=self.request.user)
+            | Q(mechanic__user=self.request.user)
+            | Q(auto_service__service_centre__owner=self.request.user)
+        ).distinct()
 
 
-    @action(detail = True, methods = ('patch,'), url_path = 'change_status',
-    permission_classes = [
-        IsAuthenticated,
-        IsServiceCentreOwnerOrStaff
-    ]
-)
+
     @action(
         detail=True,
         methods=("patch",),

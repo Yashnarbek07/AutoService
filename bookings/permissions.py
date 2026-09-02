@@ -2,7 +2,7 @@ from rest_framework.permissions import BasePermission
 
 
 class IsBookingOwnerOrStaff(BasePermission):
-    def has_obj_permission(self, request, view, obj):
+    def has_object_permission(self, request, view, obj):
         return (
             request.user.is_staff or obj.client == request.user
         )
@@ -11,5 +11,5 @@ class IsBookingOwnerOrStaff(BasePermission):
 class IsServiceCentreOwnerOrStaff(BasePermission):
     def has_object_permission(self, request, view, obj):
         return (
-            request.user.is_staff or obj.auto_service.service_owner == request.user
+            request.user.is_staff or obj.auto_service.service_centre.owner
         )
