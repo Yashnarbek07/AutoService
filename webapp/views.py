@@ -1,60 +1,42 @@
 from datetime import datetime, timedelta
-from tkinter import N
 
 from django.contrib import messages
+from django.contrib.auth import login
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.shortcuts import (
-    get_object_or_404,
-    redirect,
-    render,
-)
-
-from django.contrib.auth import login
-from webapp.forms import RegisterForm
-
-
+from django.shortcuts import get_object_or_404, redirect, render
 from django.utils import timezone
 
 from bookings.models import Booking
+from notifications.models import Notification
 from notifications.tasks import send_booking_reminder
 from services.models import AutoService, ServiceCentre
 from vehicles.models import Vehicles
-from webapp.forms import BookingForm, VehicleForm
+from webapp.forms import (
+    BookingForm,
+    ProfileForm,
+    RegisterForm,
+    VehicleForm,
+)
 
 
 def home_view(request):
-    services = AutoService.objects.filter(
-        is_available=True,
-    ).select_related(
-        "category",
-        "service_centre",
-    )[:6]
-
-    centres = ServiceCentre.objects.filter(
-        is_active=True,
-    )[:6]
-
-    context = {
-        "services": services,
-        "centres": centres,
-    }
-
+    services = (
+        AutoService.objects.filter(is_available=True)
+        .select_related("category", "service_centre")[:6]
+    )
+    centres = ServiceCentre.objects.filter(is_active=True)[:6]
     return render(
         request,
         "webapp/home.html",
-        context,
+        {"services": services, "centres": centres},
     )
 
 
 def service_list_view(request):
     services = AutoService.objects.filter(
         is_available=True,
-    ).select_related(
-        "service_centre",
-        "category",
-    )
-
+    ).select_related("service_centre", "category")
     search = request.GET.get("search", "").strip()
 
     if search:
@@ -65,15 +47,10 @@ def service_list_view(request):
             | Q(service_centre__name__icontains=search)
         )
 
-    context = {
-        "services": services,
-        "search": search,
-    }
-
     return render(
         request,
         "webapp/service_list.html",
-        context,
+        {"services": services, "search": search},
     )
 
 
@@ -87,15 +64,10 @@ def service_detail_view(request, service_id):
         id=service_id,
         is_available=True,
     )
-
-    context = {
-        "service": service,
-    }
-
     return render(
         request,
         "webapp/service_detail.html",
-        context,
+        {"service": service},
     )
 
 
@@ -110,37 +82,31 @@ def booking_create_view(request, service_id):
         is_available=True,
     )
 
-    if request.method == "POST":
-        form = BookingForm(
-            request.POST,
-            user=request.user,
+    if not request.user.vehicles.exists():
+        messages.error(
+            request,
+            "Add a vehicle before booking a service.",
         )
+        return redirect("webapp:vehicle-create")
 
+    if request.method == "POST":
+        form = BookingForm(request.POST, user=request.user)
         if form.is_valid():
             booking = form.save(commit=False)
-
             booking.client = request.user
             booking.auto_service = service
-
-            current_time = timezone.now()
-            booking.created_at = current_time
-            booking.updated_at = current_time
-
+            booking.created_at = timezone.now()
+            booking.updated_at = timezone.now()
             booking.save()
 
-            booking_datetime = datetime.combine(
-                booking.booking_date,
-                booking.booking_time,
-            )
-
             booking_datetime = timezone.make_aware(
-                booking_datetime,
+                datetime.combine(
+                    booking.booking_date,
+                    booking.booking_time,
+                ),
                 timezone.get_current_timezone(),
             )
-
-            reminder_time = (
-                booking_datetime - timedelta(hours=1)
-            )
+            reminder_time = booking_datetime - timedelta(hours=1)
 
             if reminder_time > timezone.now():
                 send_booking_reminder.apply_async(
@@ -152,21 +118,14 @@ def booking_create_view(request, service_id):
                 request,
                 "Your booking was created successfully.",
             )
-
             return redirect("webapp:booking-list")
-
     else:
         form = BookingForm(user=request.user)
-
-    context = {
-        "form": form,
-        "service": service,
-    }
 
     return render(
         request,
         "webapp/booking_form.html",
-        context,
+        {"form": form, "service": service},
     )
 
 
@@ -181,31 +140,48 @@ def booking_list_view(request):
         "mechanic",
         "mechanic__user",
     )
-
-    context = {
-        "bookings": bookings,
-    }
-
     return render(
         request,
         "webapp/booking_list.html",
-        context,
+        {"bookings": bookings},
     )
+
+
+@login_required
+def booking_cancel_view(request, booking_id):
+    if request.method != "POST":
+        return redirect("webapp:booking-list")
+
+    booking = get_object_or_404(
+        Booking,
+        id=booking_id,
+        client=request.user,
+    )
+
+    if booking.status not in (
+        Booking.Status.PENDING,
+        Booking.Status.ACCEPTED,
+    ):
+        messages.error(
+            request,
+            "This booking can no longer be cancelled.",
+        )
+    else:
+        booking.status = Booking.Status.CANCELLED
+        booking.updated_at = timezone.now()
+        booking.save(update_fields=("status", "updated_at"))
+        messages.success(request, "Booking cancelled.")
+
+    return redirect("webapp:booking-list")
+
 
 @login_required
 def vehicle_list_view(request):
-    vehicles = Vehicles.objects.filter(
-        owner=request.user,
-    )
-
-    context = {
-        "vehicles": vehicles,
-    }
-
+    vehicles = Vehicles.objects.filter(owner=request.user)
     return render(
         request,
         "webapp/vehicle_list.html",
-        context,
+        {"vehicles": vehicles},
     )
 
 
@@ -213,29 +189,24 @@ def vehicle_list_view(request):
 def vehicle_create_view(request):
     if request.method == "POST":
         form = VehicleForm(request.POST)
-
         if form.is_valid():
             vehicle = form.save(commit=False)
             vehicle.owner = request.user
             vehicle.save()
-
             messages.success(
                 request,
                 "Your vehicle was added successfully.",
             )
-
             return redirect("webapp:vehicle-list")
-
     else:
         form = VehicleForm()
 
     return render(
         request,
         "webapp/vehicle_form.html",
-        {
-            "form": form,
-        },
+        {"form": form},
     )
+
 
 def register_view(request):
     if request.user.is_authenticated:
@@ -243,16 +214,13 @@ def register_view(request):
 
     if request.method == "POST":
         form = RegisterForm(request.POST)
-
         if form.is_valid():
             user = form.save()
             login(request, user)
-
             messages.success(
                 request,
                 "Your account was created successfully.",
             )
-
             return redirect("webapp:home")
     else:
         form = RegisterForm()
@@ -262,3 +230,47 @@ def register_view(request):
         "webapp/register.html",
         {"form": form},
     )
+
+
+@login_required
+def profile_view(request):
+    if request.method == "POST":
+        form = ProfileForm(
+            request.POST,
+            request.FILES,
+            instance=request.user,
+        )
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Profile updated.")
+            return redirect("webapp:profile")
+    else:
+        form = ProfileForm(instance=request.user)
+
+    return render(
+        request,
+        "webapp/profile.html",
+        {"form": form},
+    )
+
+
+@login_required
+def notification_list_view(request):
+    notifications = Notification.objects.filter(
+        recipient=request.user,
+    ).select_related("booking")
+    return render(
+        request,
+        "webapp/notification_list.html",
+        {"notifications": notifications},
+    )
+
+
+@login_required
+def notifications_read_view(request):
+    if request.method == "POST":
+        Notification.objects.filter(
+            recipient=request.user,
+            is_read=False,
+        ).update(is_read=True)
+    return redirect("webapp:notification-list")

@@ -1,44 +1,100 @@
-
 {% extends "webapp/base.html" %}
 
-{% block title %}AutoService{% endblock %}
+{% block title %}AutoService — Vehicle maintenance{% endblock %}
 
 {% block content %}
-    <!-- eski home.html kontenti shu yerda -->
+<section class="hero">
+    <div class="container hero-grid">
+        <div>
+            <span class="section-label">Reliable vehicle care</span>
+            <h1>Book trusted vehicle maintenance in minutes.</h1>
+            <p>
+                Find a service centre, choose the right service and track
+                your booking from one simple account.
+            </p>
+            <div class="hero-actions">
+                <a href="{% url 'webapp:service-list' %}" class="btn btn-primary">
+                    Browse services
+                </a>
+                {% if not user.is_authenticated %}
+                    <a href="{% url 'webapp:register' %}" class="btn btn-outline">
+                        Create account
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+        <div class="hero-card">
+            <span class="hero-icon">🚘</span>
+            <h2>Everything in one place</h2>
+            <ul>
+                <li>Add and manage your vehicles</li>
+                <li>Book available maintenance services</li>
+                <li>Receive live booking updates</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+<section class="home-section">
+    <div class="container">
+        <div class="section-heading">
+            <div>
+                <span class="section-label">Popular services</span>
+                <h2>Available maintenance</h2>
+            </div>
+            <a href="{% url 'webapp:service-list' %}">View all →</a>
+        </div>
+        <div class="services-grid">
+            {% for service in services %}
+                <article class="service-card">
+                    <div class="service-card-top">
+                        <span class="service-category">{{ service.category.name }}</span>
+                        <span class="available-badge">Available</span>
+                    </div>
+                    <h3>{{ service.name }}</h3>
+                    <p class="service-description">
+                        {{ service.description|default:"Professional vehicle maintenance service."|truncatewords:18 }}
+                    </p>
+                    <div class="service-details">
+                        <div><span>Duration</span><strong>{{ service.duration_minutes }} min</strong></div>
+                        <div><span>Price</span><strong>{{ service.price }} UZS</strong></div>
+                    </div>
+                    <a href="{% url 'webapp:service-detail' service.id %}" class="btn btn-primary service-button">
+                        View details
+                    </a>
+                </article>
+            {% empty %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔧</div>
+                    <h3>No services available</h3>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<section class="home-section centre-section">
+    <div class="container">
+        <div class="section-heading">
+            <div>
+                <span class="section-label">Our network</span>
+                <h2>Service centres</h2>
+            </div>
+        </div>
+        <div class="centre-grid">
+            {% for centre in centres %}
+                <article class="centre-card">
+                    <h3>{{ centre.name }}</h3>
+                    <p>{{ centre.address }}</p>
+                    <strong>{{ centre.phone_number }}</strong>
+                    <span>
+                        {{ centre.opening_time|time:"H:i" }}–{{ centre.closing_time|time:"H:i" }}
+                    </span>
+                </article>
+            {% empty %}
+                <p>No service centres are available.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
 {% endblock %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>AutoService</title>
-</head>
-<body>
-    <h1>AutoService</h1>
-
-    <h2>Service centres</h2>
-
-    {% for centre in centres %}
-        <div>
-            <h3>{{ centre.name }}</h3>
-            <p>{{ centre.address }}</p>
-            <p>{{ centre.phone_number }}</p>
-        </div>
-    {% empty %}
-        <p>No service centres are available.</p>
-    {% endfor %}
-
-    <h2>Available services</h2>
-
-    {% for service in services %}
-        <div>
-            <h3>{{ service.name }}</h3>
-            <p>Centre: {{ service.service_centre.name }}</p>
-            <p>Category: {{ service.category.name }}</p>
-            <p>Price: {{ service.price }}</p>
-            <p>Duration: {{ service.duration_minutes }} minutes</p>
-        </div>
-    {% empty %}
-        <p>No services are available.</p>
-    {% endfor %}
-</body>
-</html>

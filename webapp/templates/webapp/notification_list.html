@@ -1,0 +1,46 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}Notifications — AutoService{% endblock %}
+
+{% block content %}
+<section class="notifications-page">
+    <div class="container">
+        <div class="page-heading">
+            <div>
+                <p class="eyebrow">Updates</p>
+                <h1>Notifications</h1>
+                <p>Booking reminders and status changes appear here.</p>
+            </div>
+            {% if notifications %}
+                <form method="post" action="{% url 'webapp:notifications-read' %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline">Mark all as read</button>
+                </form>
+            {% endif %}
+        </div>
+
+        <div class="notification-list">
+            {% for notification in notifications %}
+                <article class="notification-card {% if not notification.is_read %}notification-unread{% endif %}">
+                    <div class="notification-icon">🔔</div>
+                    <div>
+                        <p>{{ notification.message }}</p>
+                        <span>{{ notification.created_at|date:"d M Y, H:i" }}</span>
+                        {% if notification.booking %}
+                            <a href="{% url 'webapp:booking-list' %}">
+                                Booking #{{ notification.booking.id }}
+                            </a>
+                        {% endif %}
+                    </div>
+                </article>
+            {% empty %}
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔔</div>
+                    <h2>No notifications</h2>
+                    <p>Your new updates will appear here.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
