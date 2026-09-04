@@ -1,0 +1,45 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}Book {{ service.name }} — AutoService{% endblock %}
+
+{% block content %}
+<section class="booking-form-page">
+    <div class="container booking-form-grid">
+        <div class="booking-form-card">
+            <a href="{% url 'webapp:service-detail' service.id %}" class="back-link">
+                ← Back to service
+            </a>
+            <span class="section-label">New appointment</span>
+            <h1>Book a service</h1>
+            <p class="form-description">Choose your vehicle and preferred appointment time.</p>
+
+            <form method="post">
+                {% csrf_token %}
+                {% if form.non_field_errors %}
+                    <div class="form-errors">{{ form.non_field_errors }}</div>
+                {% endif %}
+                {% for field in form %}
+                    <div class="form-group">
+                        <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                        {{ field }}
+                        {{ field.errors }}
+                    </div>
+                {% endfor %}
+                <button type="submit" class="btn btn-primary submit-booking-button">
+                    Confirm booking
+                </button>
+            </form>
+        </div>
+
+        <aside class="booking-service-summary">
+            <span class="service-category">{{ service.category.name }}</span>
+            <h2>{{ service.name }}</h2>
+            <div class="summary-list">
+                <div><span>Centre</span><strong>{{ service.service_centre.name }}</strong></div>
+                <div><span>Duration</span><strong>{{ service.duration_minutes }} minutes</strong></div>
+                <div><span>Price</span><strong>{{ service.price }} UZS</strong></div>
+            </div>
+        </aside>
+    </div>
+</section>
+{% endblock %}

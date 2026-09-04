@@ -1,0 +1,35 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}My profile — AutoService{% endblock %}
+
+{% block content %}
+<section class="auth-page container">
+    <div class="auth-card register-card">
+        <div class="auth-heading">
+            {% if user.avatar %}
+                <img src="{{ user.avatar.url }}" alt="{{ user.username }}" class="profile-avatar">
+            {% else %}
+                <span class="profile-avatar-fallback">{{ user.username|first|upper }}</span>
+            {% endif %}
+            <p class="eyebrow">Account settings</p>
+            <h1>{{ user.get_full_name|default:user.username }}</h1>
+            <p>@{{ user.username }} · {{ user.get_role_display }}</p>
+        </div>
+        <form method="post" enctype="multipart/form-data" class="auth-form">
+            {% csrf_token %}
+            {% for field in form %}
+                <div class="form-group">
+                    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                    {{ field }}
+                    {% for error in field.errors %}
+                        <p class="field-error">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary auth-button">
+                Save changes
+            </button>
+        </form>
+    </div>
+</section>
+{% endblock %}
