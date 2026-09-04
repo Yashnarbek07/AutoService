@@ -36,7 +36,7 @@ class ServiceCategoryViewSet(ModelViewSet):
 class AutoServiceViewSet(ModelViewSet):
     queryset = AutoService.objects.select_related(
         'service_centre',
-        'service_centre.owner',
+        'service_centre__owner',
         'category'
     )
 

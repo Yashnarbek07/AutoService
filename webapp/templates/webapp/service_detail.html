@@ -1,0 +1,141 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}
+    {{ service.name }} — AutoService
+{% endblock %}
+
+{% block content %}
+    <section class="service-detail-page">
+        <div class="container">
+            <a
+                href="{% url 'webapp:service-list' %}"
+                class="back-link"
+            >
+                ← Back to services
+            </a>
+
+            <div class="service-detail-grid">
+                <article class="service-main-card">
+                    <div class="service-card-top">
+                        <span class="service-category">
+                            {{ service.category.name }}
+                        </span>
+
+                        <span class="available-badge">
+                            Available
+                        </span>
+                    </div>
+
+                    <h1>{{ service.name }}</h1>
+
+                    <p class="detail-description">
+                        {% if service.description %}
+                            {{ service.description }}
+                        {% else %}
+                            Professional vehicle maintenance service.
+                        {% endif %}
+                    </p>
+
+                    <div class="detail-information">
+                        <div>
+                            <span>Service centre</span>
+                            <strong>
+                                {{ service.service_centre.name }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Category</span>
+                            <strong>
+                                {{ service.category.name }}
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Duration</span>
+                            <strong>
+                                {{ service.duration_minutes }} minutes
+                            </strong>
+                        </div>
+
+                        <div>
+                            <span>Price</span>
+                            <strong>
+                                {{ service.price }} UZS
+                            </strong>
+                        </div>
+                    </div>
+                </article>
+
+                <aside class="booking-summary-card">
+                    <h2>Book this service</h2>
+
+                    <p>
+                        Choose your vehicle, preferred date and time.
+                    </p>
+
+                    <div class="summary-price">
+                        <span>Service price</span>
+                        <strong>{{ service.price }} UZS</strong>
+                    </div>
+
+                    {% if user.is_authenticated %}
+                        <a
+                            href="{% url 'webapp:booking-create' service.id %}"
+                            class="btn btn-primary service-button"
+                        >
+                            Book this service
+                        </a>
+                    {% else %}
+                        <a
+                            href="{% url 'webapp:login' %}?next={{ request.path }}"
+                            class="btn btn-primary service-button"
+                        >
+                            Log in to book
+                        </a>
+                    {% endif %}
+
+                    <small>
+                        You will receive live booking status updates.
+                    </small>
+                </aside>
+            </div>
+
+            <section class="centre-information">
+                <h2>Service centre information</h2>
+
+                <div class="centre-information-grid">
+                    <div>
+                        <span>Name</span>
+                        <strong>
+                            {{ service.service_centre.name }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Address</span>
+                        <strong>
+                            {{ service.service_centre.address }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Phone number</span>
+                        <strong>
+                            {{ service.service_centre.phone_number }}
+                        </strong>
+                    </div>
+
+                    <div>
+                        <span>Working hours</span>
+                        <strong>
+                            {{ service.service_centre.opening_time|time:"H:i" }}
+                            –
+                            {{ service.service_centre.closing_time|time:"H:i" }}
+                        </strong>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </section>
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}
+    My vehicles — AutoService
+{% endblock %}
+
+{% block content %}
+    <section class="page-header">
+        <div class="container page-header-row">
+            <div>
+                <span class="section-label">Your garage</span>
+                <h1>My vehicles</h1>
+
+                <p>
+                    Manage the vehicles connected to your account.
+                </p>
+            </div>
+
+            <a
+                href="{% url 'webapp:vehicle-create' %}"
+                class="btn btn-primary"
+            >
+                + Add vehicle
+            </a>
+        </div>
+    </section>
+
+    <section class="vehicles-page">
+        <div class="container">
+            <div class="vehicles-grid">
+                {% for vehicle in vehicles %}
+                    <article class="vehicle-card">
+                        <div class="vehicle-card-header">
+                            <div class="vehicle-icon">🚘</div>
+
+                            <span class="vehicle-year">
+                                {{ vehicle.year }}
+                            </span>
+                        </div>
+
+                        <h2>
+                            {{ vehicle.brand }} {{ vehicle.model }}
+                        </h2>
+
+                        <div class="plate-number">
+                            {{ vehicle.plate_number }}
+                        </div>
+
+                        <div class="vehicle-information">
+                            <div>
+                                <span>Colour</span>
+                                <strong>
+                                    {% if vehicle.color %}
+                                        {{ vehicle.color }}
+                                    {% else %}
+                                        Not specified
+                                    {% endif %}
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Added</span>
+                                <strong>
+                                    {{ vehicle.created_at|date:"d M Y" }}
+                                </strong>
+                            </div>
+                        </div>
+
+                        <a
+                            href="{% url 'webapp:service-list' %}"
+                            class="btn btn-outline vehicle-button"
+                        >
+                            Find a service
+                        </a>
+                    </article>
+                {% empty %}
+                    <div class="empty-state">
+                        <div>🚗</div>
+                        <h3>You have no vehicles yet</h3>
+
+                        <p>
+                            Add your first vehicle to book a service.
+                        </p>
+
+                        <a
+                            href="{% url 'webapp:vehicle-create' %}"
+                            class="btn btn-primary"
+                        >
+                            Add vehicle
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}

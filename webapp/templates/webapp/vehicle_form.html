@@ -1,0 +1,91 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}
+    Add vehicle — AutoService
+{% endblock %}
+
+{% block content %}
+    <section class="vehicle-form-page">
+        <div class="form-card">
+            <a
+                href="{% url 'webapp:vehicle-list' %}"
+                class="back-link"
+            >
+                ← Back to my vehicles
+            </a>
+
+            <span class="section-label">Your garage</span>
+            <h1>Add a vehicle</h1>
+
+            <p class="form-description">
+                Enter the information about your vehicle.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                    <div class="form-errors">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.brand.id_for_label }}">
+                            Brand
+                        </label>
+
+                        {{ form.brand }}
+                        {{ form.brand.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.model.id_for_label }}">
+                            Model
+                        </label>
+
+                        {{ form.model }}
+                        {{ form.model.errors }}
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="{{ form.year.id_for_label }}">
+                            Year
+                        </label>
+
+                        {{ form.year }}
+                        {{ form.year.errors }}
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.color.id_for_label }}">
+                            Colour
+                        </label>
+
+                        {{ form.color }}
+                        {{ form.color.errors }}
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="{{ form.plate_number.id_for_label }}">
+                        Plate number
+                    </label>
+
+                    {{ form.plate_number }}
+                    {{ form.plate_number.errors }}
+                </div>
+
+                <button
+                    type="submit"
+                    class="btn btn-primary submit-booking-button"
+                >
+                    Save vehicle
+                </button>
+            </form>
+        </div>
+    </section>
+{% endblock %}

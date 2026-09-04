@@ -1,23 +1,100 @@
 {% extends "webapp/base.html" %}
 
-{% block title %}My bookings{% endblock %}
+{% block title %}My Bookings — AutoService{% endblock %}
 
 {% block content %}
-    <h1>My bookings</h1>
-
-    {% for booking in bookings %}
+<section class="bookings-page">
+    <div class="page-heading">
         <div>
-            <h3>{{ booking.auto_service.name }}</h3>
-            <p>Vehicle: {{ booking.vehicle }}</p>
-            <p>Date: {{ booking.booking_date }}</p>
-            <p>Time: {{ booking.booking_time }}</p>
-            <p>Status: {{ booking.get_status_display }}</p>
-
-            {% if booking.mechanic %}
-                <p>Mechanic: {{ booking.mechanic }}</p>
-            {% endif %}
+            <p class="eyebrow">Vehicle maintenance</p>
+            <h1>My bookings</h1>
+            <p>Track your appointments and their current status.</p>
         </div>
-    {% empty %}
-        <p>You do not have any bookings.</p>
-    {% endfor %}
+
+        <a href="{% url 'webapp:service-list' %}"
+           class="btn btn-primary">
+            Book a service
+        </a>
+    </div>
+
+    {% if bookings %}
+        <div class="booking-grid">
+            {% for booking in bookings %}
+                <article class="booking-card">
+                    <div class="booking-card-header">
+                        <div>
+                            <span class="booking-number">
+                                Booking #{{ booking.id }}
+                            </span>
+
+                            <h2>{{ booking.auto_service.name }}</h2>
+                        </div>
+
+                        <span class="status-badge status-{{ booking.status|lower }}">
+                            {{ booking.get_status_display }}
+                        </span>
+                    </div>
+
+                    <div class="booking-details">
+                        <div class="booking-detail">
+                            <span>Vehicle</span>
+                            <strong>{{ booking.vehicle }}</strong>
+                        </div>
+
+                        <div class="booking-detail">
+                            <span>Date</span>
+                            <strong>{{ booking.booking_date|date:"d M Y" }}</strong>
+                        </div>
+
+                        <div class="booking-detail">
+                            <span>Time</span>
+                            <strong>{{ booking.booking_time|time:"H:i" }}</strong>
+                        </div>
+
+                        <div class="booking-detail">
+                            <span>Mechanic</span>
+                            <strong>
+                                {% if booking.mechanic %}
+                                    {{ booking.mechanic }}
+                                {% else %}
+                                    Not assigned yet
+                                {% endif %}
+                            </strong>
+                        </div>
+
+                        <div class="booking-detail">
+                            <span>Service centre</span>
+                            <strong>
+                                {{ booking.auto_service.service_centre.name }}
+                            </strong>
+                        </div>
+
+                        <div class="booking-detail">
+                            <span>Price</span>
+                            <strong>{{ booking.auto_service.price }} UZS</strong>
+                        </div>
+                    </div>
+
+                    {% if booking.problem_description %}
+                        <div class="booking-description">
+                            <span>Problem description</span>
+                            <p>{{ booking.problem_description }}</p>
+                        </div>
+                    {% endif %}
+                </article>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">📅</div>
+            <h2>No bookings yet</h2>
+            <p>You have not booked any vehicle services yet.</p>
+
+            <a href="{% url 'webapp:service-list' %}"
+               class="btn btn-primary">
+                Browse services
+            </a>
+        </div>
+    {% endif %}
+</section>
 {% endblock %}

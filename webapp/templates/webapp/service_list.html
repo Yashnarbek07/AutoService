@@ -1,0 +1,140 @@
+{% extends "webapp/base.html" %}
+
+{% block title %}
+    Services — AutoService
+{% endblock %}
+
+{% block content %}
+    <section class="page-header">
+        <div class="container">
+            <span class="section-label">
+                Vehicle maintenance
+            </span>
+
+            <h1>Available services</h1>
+
+            <p>
+                Find the right maintenance service for your vehicle.
+            </p>
+        </div>
+    </section>
+
+    <section class="services-page">
+        <div class="container">
+            <form method="get" class="search-form">
+                <input
+                    type="search"
+                    name="search"
+                    value="{{ search }}"
+                    placeholder="Search services..."
+                >
+
+                <button type="submit" class="btn btn-primary">
+                    Search
+                </button>
+
+                {% if search %}
+                    <a
+                        href="{% url 'webapp:service-list' %}"
+                        class="btn btn-outline"
+                    >
+                        Clear
+                    </a>
+                {% endif %}
+            </form>
+
+            <div class="results-heading">
+                {% if search %}
+                    <p>
+                        Results for:
+                        <strong>{{ search }}</strong>
+                    </p>
+                {% else %}
+                    <p>All available services</p>
+                {% endif %}
+
+                <span>
+                    {{ services|length }}
+                    service{{ services|length|pluralize }}
+                </span>
+            </div>
+
+            <div class="services-grid">
+                {% for service in services %}
+                    <article class="service-card">
+                        <div class="service-card-top">
+                            <span class="service-category">
+                                {{ service.category.name }}
+                            </span>
+
+                            <span class="available-badge">
+                                Available
+                            </span>
+                        </div>
+
+                        <h3>{{ service.name }}</h3>
+
+                        <p class="service-description">
+                            {% if service.description %}
+                                {{ service.description|truncatewords:20 }}
+                            {% else %}
+                                Professional vehicle maintenance service.
+                            {% endif %}
+                        </p>
+
+                        <div class="service-centre">
+                            <span>Service centre</span>
+
+                            <strong>
+                                {{ service.service_centre.name }}
+                            </strong>
+                        </div>
+
+                        <div class="service-details">
+                            <div>
+                                <span>Duration</span>
+
+                                <strong>
+                                    {{ service.duration_minutes }} min
+                                </strong>
+                            </div>
+
+                            <div>
+                                <span>Price</span>
+
+                                <strong>
+                                    {{ service.price }} UZS
+                                </strong>
+                            </div>
+                        </div>
+
+                        <a
+                            href="{% url 'webapp:service-detail' service.id %}"
+                            class="btn btn-primary service-button"
+                        >
+                            View details
+                        </a>
+                    </article>
+                {% empty %}
+                    <div class="empty-state">
+                        <div>🔧</div>
+                        <h3>No services available</h3>
+
+                        <p>
+                            Add services through the admin panel first.
+                        </p>
+
+                        {% if user.is_staff %}
+                            <a
+                                href="/admin/services/autoservice/add/"
+                                class="btn btn-primary"
+                            >
+                                Add service
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+{% endblock %}>
