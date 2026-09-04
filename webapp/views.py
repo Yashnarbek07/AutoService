@@ -214,13 +214,10 @@ def register_view(request):
 
     if request.method == "POST":
         form = RegisterForm(request.POST)
+
         if form.is_valid():
             user = form.save()
             login(request, user)
-            messages.success(
-                request,
-                "Your account was created successfully.",
-            )
             return redirect("webapp:home")
     else:
         form = RegisterForm()
@@ -230,30 +227,65 @@ def register_view(request):
         "webapp/register.html",
         {"form": form},
     )
-
-
 @login_required
 def profile_view(request):
     if request.method == "POST":
+        if request.POST.get("remove_avatar"):
+            if request.user.avatar:
+                request.user.avatar.delete(save=False)
+                request.user.avatar = None
+                request.user.save(
+                    update_fields=("avatar",)
+                )
+
+            messages.success(
+                request,
+                "Profile photo removed.",
+            )
+            return redirect("webapp:profile")
+
         form = ProfileForm(
             request.POST,
             request.FILES,
             instance=request.user,
         )
+
         if form.is_valid():
             form.save()
-            messages.success(request, "Profile updated.")
+
+            messages.success(
+                request,
+                "Profile updated.",
+            )
             return redirect("webapp:profile")
+
     else:
-        form = ProfileForm(instance=request.user)
+        form = ProfileForm(
+            instance=request.user,
+        )
 
     return render(
         request,
         "webapp/profile.html",
-        {"form": form},
+        {
+            "form": form,
+        },
     )
 
 
+@login_required
+def notification_list_view(request):
+    notifications = Notification.objects.filter(
+        recipient=request.user,
+    ).select_related("booking")
+
+    return render(
+        request,
+        "webapp/notification_list.html",
+        {
+            "notifications": notifications,
+        },
+    )
 @login_required
 def notification_list_view(request):
     notifications = Notification.objects.filter(

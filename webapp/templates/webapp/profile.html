@@ -26,6 +26,16 @@
                     {% endfor %}
                 </div>
             {% endfor %}
+            {% if user.avatar %}
+    <button
+        type="submit"
+        name="remove_avatar"
+        value="true"
+        class="btn btn-danger"
+    >
+        Remove photo
+    </button>
+{% endif %}
             <button type="submit" class="btn btn-primary auth-button">
                 Save changes
             </button>

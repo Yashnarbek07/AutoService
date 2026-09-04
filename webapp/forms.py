@@ -57,13 +57,6 @@ class BookingForm(forms.ModelForm):
             ),
         }
 
-    def __init__(self, *args, user=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields["vehicle"].queryset = (
-            Vehicles.objects.filter(owner=user)
-            if user
-            else Vehicles.objects.none()
-        )
 
     def clean(self):
         cleaned_data = super().clean()
