@@ -134,6 +134,22 @@ class BookingStatusAndPermissionTest(APITestCase):
             self.mechanic,
         )
 
+    def test_client_cannot_change_booking_status(self):
+        self.client.force_authenticate(user=self.client_user)
+
+        response = self.client.patch(
+            self.change_status_url,
+            {
+                "status": Booking.Status.ACCEPTED,
+                "mechanic": self.mechanic.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, Booking.Status.PENDING)
+
     def test_other_user_cannot_change_booking_status(self):
         self.client.force_authenticate(user=self.other_user)
 
