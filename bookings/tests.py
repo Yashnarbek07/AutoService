@@ -251,8 +251,8 @@ class BookingCreationTest(APITestCase):
 
     def test_creates_booking_with_timestamps_and_display_fields(self):
         tomorrow = timezone.localdate() + timedelta(days=1)
-        with self.captureOnCommitCallbacks(execute=True):
-            with patch("bookings.views.send_booking_reminder.apply_async") as reminder:
+        with patch("bookings.views.send_booking_reminder.apply_async") as reminder:
+            with self.captureOnCommitCallbacks(execute=True):
                 response = self.client.post(
                     "/api/bookings/",
                     {
