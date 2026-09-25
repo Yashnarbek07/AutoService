@@ -1,22 +1,22 @@
+from datetime import datetime
+
 from django.utils import timezone
 from rest_framework import serializers
 
 from bookings.models import Booking
 
+
 class ClientBookingSerializer(serializers.ModelSerializer):
     client_username = serializers.CharField(
-        source = 'client.username',
-        read_only = True
+        source="client.username",
+        read_only=True,
     )
-
     vehicle_name = serializers.SerializerMethodField()
     service_name = serializers.CharField(
-        source = 'auto.service_name',
-        read_only = True
+        source="auto_service.name",
+        read_only=True,
     )
-
     mechanic_name = serializers.SerializerMethodField()
-
 
     class Meta:
         model = Booking
@@ -46,51 +46,45 @@ class ClientBookingSerializer(serializers.ModelSerializer):
             "updated_at",
         )
 
+    def get_vehicle_name(self, obj):
+        return str(obj.vehicle)
 
+    def get_mechanic_name(self, obj):
+        if obj.mechanic:
+            return obj.mechanic.user.get_full_name() or obj.mechanic.user.username
+        return None
 
-        def get_vehicle_name(self, obj):
-            return str(obj.vehicle)
-
-
-        def get_mechanic_name(self, obj):
-            if obj.mechanic:
-                return (
-                    obj.mechanic.user.get_full_name or
-                    obj.mechanic.user.username
-                )
-
-            return None
-
-
-        def validate_booking_time(self, value):
-            if value < timezone.localdate:
+    def validate(self, attrs):
+        booking_date = attrs.get(
+            "booking_date",
+            self.instance.booking_date if self.instance else None,
+        )
+        booking_time = attrs.get(
+            "booking_time",
+            self.instance.booking_time if self.instance else None,
+        )
+        if booking_date and booking_time:
+            booking_datetime = timezone.make_aware(
+                datetime.combine(booking_date, booking_time),
+                timezone.get_current_timezone(),
+            )
+            if booking_datetime < timezone.now():
                 raise serializers.ValidationError(
-                    'Time cant be in the past'
+                    {"booking_time": "Booking cannot be in the past."}
                 )
-            return value
+        return attrs
 
-        def validate_vehicle(self, vehicle):
-            request = self.context.get("request")
-
-            if (
-                    request
-                    and not request.user.is_staff
-                    and vehicle.owner != request.user
-            ):
-                raise serializers.ValidationError(
-                    "You can only book your own vehicle."
-                )
-
-            return vehicle
+    def validate_vehicle(self, vehicle):
+        request = self.context.get("request")
+        if request and not request.user.is_staff and vehicle.owner_id != request.user.id:
+            raise serializers.ValidationError("You can only book your own vehicle.")
+        return vehicle
 
 
 class BookingStatusSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
-        fields = (
-            "status",
-            "mechanic",
-        )
+        fields = ("status", "mechanic")
 
     def validate(self, attrs):
         status_value = attrs.get(
@@ -101,15 +95,8 @@ class BookingStatusSerializer(serializers.ModelSerializer):
             "mechanic",
             self.instance.mechanic if self.instance else None,
         )
-
-        if (
-            status_value == Booking.Status.ACCEPTED
-            and mechanic is None
-        ):
+        if status_value == Booking.Status.ACCEPTED and mechanic is None:
             raise serializers.ValidationError({
-                "mechanic": (
-                    "Booking cannot be accepted without a mechanic."
-                )
+                "mechanic": "Booking cannot be accepted without a mechanic."
             })
-
         return attrs

@@ -134,6 +134,22 @@ class BookingStatusAndPermissionTest(APITestCase):
             self.mechanic,
         )
 
+    def test_client_cannot_change_booking_status(self):
+        self.client.force_authenticate(user=self.client_user)
+
+        response = self.client.patch(
+            self.change_status_url,
+            {
+                "status": Booking.Status.ACCEPTED,
+                "mechanic": self.mechanic.id,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.booking.refresh_from_db()
+        self.assertEqual(self.booking.status, Booking.Status.PENDING)
+
     def test_other_user_cannot_change_booking_status(self):
         self.client.force_authenticate(user=self.other_user)
 
@@ -216,3 +232,71 @@ class BookingStatusAndPermissionTest(APITestCase):
             self.booking.status,
             Booking.Status.PENDING,
         )
+
+class BookingCreationTest(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            username="booking_client",
+            password="StrongPassword123!",
+        )
+        self.vehicle = Vehicles.objects.create(
+            owner=self.user,
+            brand="Chevrolet",
+            model="Cobalt",
+            year=2024,
+            plate_number="01A888AA",
+            color="White",
+        )
+        centre = ServiceCentre.objects.create(
+            owner=self.user,
+            name="Booking Test Service",
+            address="Tashkent",
+            phone_number="+998901234567",
+            opening_time=time(9, 0),
+            closing_time=time(18, 0),
+        )
+        category = ServiceCategory.objects.create(name="Maintenance")
+        self.auto_service = AutoService.objects.create(
+            service_centre=centre,
+            category=category,
+            name="Oil change",
+            price="150000.00",
+            duration_minutes=30,
+        )
+        self.client.force_authenticate(user=self.user)
+
+    def test_creates_booking_with_timestamps_and_display_fields(self):
+        tomorrow = timezone.localdate() + timedelta(days=1)
+        with patch("bookings.views.send_booking_reminder.apply_async") as reminder:
+            with self.captureOnCommitCallbacks(execute=True):
+                response = self.client.post(
+                    "/api/bookings/",
+                    {
+                        "vehicle": self.vehicle.id,
+                        "auto_service": self.auto_service.id,
+                        "booking_date": tomorrow.isoformat(),
+                        "booking_time": "12:00:00",
+                    },
+                    format="json",
+                )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["service_name"], "Oil change")
+        self.assertTrue(response.data["vehicle_name"])
+        booking = Booking.objects.get(pk=response.data["id"])
+        self.assertIsNotNone(booking.created_at)
+        self.assertIsNotNone(booking.updated_at)
+        reminder.assert_called_once()
+
+    def test_rejects_past_booking_time(self):
+        response = self.client.post(
+            "/api/bookings/",
+            {
+                "vehicle": self.vehicle.id,
+                "auto_service": self.auto_service.id,
+                "booking_date": (timezone.localdate() - timedelta(days=1)).isoformat(),
+                "booking_time": "12:00:00",
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("booking_time", response.data)
