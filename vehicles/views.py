@@ -20,4 +20,4 @@ class VehicleDetailAPIView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = (IsAuthenticated,)
 
     def get_queryset(self):
-        Vehicles.objects.filter(owner = self.request.user)
+        return Vehicles.objects.filter(owner = self.request.user)

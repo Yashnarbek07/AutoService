@@ -156,7 +156,7 @@ class MechanicProfileSerializer(serializers.ModelSerializer):
         )
 
     def get_full_name(self, obj):
-        return obj.user.get_full_name or obj.user.usermame
+        return obj.user.get_full_name() or obj.user.usermame
 
     def validate_service_centre(self, service_centre):
             request = self.context.get("request")
