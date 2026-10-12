@@ -84,6 +84,7 @@ INSTALLED_APPS = [
     'notifications',
     'django_celery_beat',
     'webapp',
+    'ai',
     'drf_spectacular',
 
 ]

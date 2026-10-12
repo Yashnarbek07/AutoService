@@ -25,3 +25,46 @@ celerybeat.pid
 # OS
 .DS_Store
 Thumbs.db
+
+
+
+# Environment variables and secrets
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python virtual environments
+env/
+
+# Python cache
+*$py.class
+
+# Django
+db.sqlite3-journal
+local_settings.py
+
+# Uploaded and generated media
+/media/
+
+# Collected static files
+/staticfiles/
+
+# PyCharm
+.idea/
+
+# VS Code local settings
+.vscode/
+
+# Operating system
+
+# Testing and linting
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Temporary files
+*.tmp
+*.bak

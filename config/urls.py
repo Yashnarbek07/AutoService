@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/notifications/', include('notifications.urls')),
     path("", include("webapp.urls")),
     path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("ai/", include("ai.urls")),
     path(
         "api/docs/",
         SpectacularSwaggerView.as_view(url_name="schema"),

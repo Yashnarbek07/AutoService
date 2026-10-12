@@ -18,9 +18,14 @@
             <span class="logo-icon">A</span>
             <span>AutoService</span>
         </a>
+
+
         <nav class="nav-links">
             <a href="{% url 'webapp:home' %}">Home</a>
             <a href="{% url 'webapp:service-list' %}">Services</a>
+            <a href="{% url 'ai:generator' %}" class="btn btn-primary">
+    ✨ AI Generator
+</a>
             {% if user.is_authenticated %}
                 <a href="{% url 'webapp:vehicle-list' %}">My vehicles</a>
                 <a href="{% url 'webapp:booking-list' %}">My bookings</a>

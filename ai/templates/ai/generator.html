@@ -1,0 +1,383 @@
+
+{% extends "webapp/base.html" %}
+
+{% block title %}AI Studio | AutoService{% endblock %}
+
+{% block extra_css %}
+<style>
+.ai-page {
+    background: #f3f6fc;
+    min-height: 80vh;
+    padding: 48px 16px;
+}
+.ai-container {
+    max-width: 1050px;
+    margin: auto;
+}
+.ai-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+.ai-header h1 {
+    font-size: clamp(28px, 5vw, 42px);
+    color: #17243b;
+    margin-bottom: 10px;
+}
+.ai-header p { color: #64748b; }
+.ai-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 28px;
+    box-shadow: 0 10px 35px #15244012;
+}
+.ai-label {
+    font-weight: 700;
+    display: block;
+    margin-bottom: 12px;
+}
+.ai-prompt {
+    width: 100%;
+    min-height: 135px;
+    box-sizing: border-box;
+    border: 1px solid #cbd5e1;
+    border-radius: 12px;
+    padding: 15px;
+    resize: vertical;
+    font: inherit;
+}
+.ai-prompt:focus {
+    outline: 2px solid #4361ee;
+}
+.ai-btn {
+    display: inline-block;
+    background: #4361ee;
+    color: white;
+    border: 0;
+    border-radius: 10px;
+    padding: 13px 20px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+}
+.ai-btn:hover { background: #304ecb; color: white; }
+.ai-btn:disabled { opacity: .55; cursor: not-allowed; }
+.ai-generate {
+    width: 100%;
+    margin-top: 16px;
+}
+.ai-limit {
+    color: #64748b;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.ai-status {
+    color: #475569;
+    margin-top: 15px;
+    text-align: center;
+}
+.ai-result {
+    min-height: 200px;
+    border: 2px dashed #cbd5e1;
+    border-radius: 14px;
+    background: #f8fafc;
+    margin-top: 20px;
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    color: #64748b;
+    text-align: center;
+}
+.ai-result img {
+    max-width: 100%;
+    max-height: 560px;
+    border-radius: 12px;
+}
+.ai-history-title {
+    color: #17243b;
+    margin: 36px 0 18px;
+}
+.ai-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(235px, 1fr));
+    gap: 18px;
+}
+.ai-card {
+    background: white;
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 6px 25px #15244012;
+    overflow: hidden;
+}
+.ai-card img {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    object-fit: cover;
+    border-radius: 10px;
+}
+.ai-card p {
+    overflow-wrap: anywhere;
+    margin: 12px 0;
+    font-size: 14px;
+}
+.ai-card small {
+    display: block;
+    color: #64748b;
+    margin-bottom: 12px;
+}
+.ai-card .ai-btn {
+    font-size: 13px;
+    padding: 9px 13px;
+}
+.ai-empty { color: #64748b; }
+@media (max-width: 600px) {
+    .ai-panel { padding: 18px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="ai-page">
+    <div class="ai-container">
+        <div class="ai-header">
+            <h1>✨ AI Image Studio</h1>
+            <p>Create images and explore your generation history.</p>
+        </div>
+
+        <div class="ai-panel">
+            <label for="prompt" class="ai-label">
+                Describe your image
+            </label>
+
+            <textarea
+                id="prompt"
+                class="ai-prompt"
+                maxlength="2000"
+                placeholder="A futuristic sports car in Tokyo at night..."
+            ></textarea>
+
+            <p class="ai-limit" id="limit">
+                Remaining generations today: {{ remaining }} / 5
+            </p>
+
+            <button class="ai-btn ai-generate" id="generateBtn">
+                ✨ Generate Image
+            </button>
+
+            <p class="ai-status" id="status" role="status"></p>
+
+            <div class="ai-result" id="result">
+                Your generated image will appear here.
+            </div>
+        </div>
+
+        <h2 class="ai-history-title">Your Generation History</h2>
+
+        <div id="history" class="ai-grid">
+            {% for item in history %}
+                <article class="ai-card">
+                    {% if item.image_url %}
+                        <img src="{{ item.image_url }}"
+                             alt="Generated image"
+                             loading="lazy">
+                    {% endif %}
+
+                    <p>{{ item.prompt|truncatechars:100 }}</p>
+                    <small>
+                        {{ item.get_status_display }}
+                        · {{ item.created_at|date:"d M Y H:i" }}
+                    </small>
+
+                    {% if item.status == "success" %}
+                        <a class="ai-btn"
+                           href="{% url 'ai:download' item.id %}">
+                            ⬇ Download
+                        </a>
+                    {% endif %}
+                </article>
+            {% empty %}
+                <p class="ai-empty">No generations yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const button = document.getElementById("generateBtn");
+const promptInput = document.getElementById("prompt");
+const statusText = document.getElementById("status");
+const resultBox = document.getElementById("result");
+const historyBox = document.getElementById("history");
+const limitText = document.getElementById("limit");
+
+const generateUrl = "{% url 'ai:generate' %}";
+const statusUrl = "{% url 'ai:status' %}";
+const historyUrl = "{% url 'ai:history' %}";
+const downloadTemplate = "{% url 'ai:download' 999999999 %}";
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+function getCookie(name) {
+    const item = document.cookie.split("; ")
+        .find(value => value.startsWith(name + "="));
+
+    return item
+        ? decodeURIComponent(item.split("=").slice(1).join("="))
+        : "";
+}
+
+function downloadUrl(id) {
+    return downloadTemplate.replace("999999999", String(id));
+}
+
+function makeImage(url) {
+    const image = document.createElement("img");
+    image.src = url;
+    image.alt = "AI generated image";
+    image.loading = "lazy";
+    return image;
+}
+
+function makeDownload(id) {
+    const link = document.createElement("a");
+    link.href = downloadUrl(id);
+    link.className = "ai-btn";
+    link.textContent = "⬇ Download";
+    return link;
+}
+
+async function refreshHistory() {
+    const response = await fetch(historyUrl);
+    if (!response.ok) return;
+
+    const data = await response.json();
+
+    limitText.textContent =
+        `Remaining generations today: ${data.remaining} / 5`;
+
+    historyBox.replaceChildren();
+
+    if (!data.items.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "No generations yet.";
+        historyBox.appendChild(empty);
+        return;
+    }
+
+    for (const item of data.items) {
+        const card = document.createElement("article");
+        card.className = "ai-card";
+
+        if (item.image_url) {
+            card.appendChild(makeImage(item.image_url));
+        }
+
+        const prompt = document.createElement("p");
+        prompt.textContent = item.prompt;
+        card.appendChild(prompt);
+
+        const meta = document.createElement("small");
+        meta.textContent =
+            `${item.status} · ${new Date(item.created_at).toLocaleString()}`;
+        card.appendChild(meta);
+
+        if (item.status === "success") {
+            card.appendChild(makeDownload(item.id));
+        }
+
+        historyBox.appendChild(card);
+    }
+}
+
+button.addEventListener("click", async () => {
+    const prompt = promptInput.value.trim();
+
+    if (!prompt) {
+        statusText.textContent = "Enter a prompt first.";
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Generating...";
+    statusText.textContent = "Starting generation...";
+    resultBox.textContent = "AI is creating your image...";
+
+    try {
+        const response = await fetch(generateUrl, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCookie("csrftoken")
+            },
+            body: JSON.stringify({prompt})
+        });
+
+        const start = await response.json();
+
+        if (!response.ok) {
+            throw new Error(start.error || "Unable to start");
+        }
+
+        await refreshHistory();
+
+        let completed = false;
+
+        for (let attempt = 0; attempt < 120; attempt++) {
+            await sleep(3000);
+
+            const check = await fetch(
+                statusUrl + "?task_id=" +
+                encodeURIComponent(start.task_id)
+            );
+
+            if (!check.ok) {
+                // Retry temporary polling failures.
+                if (check.status === 503) continue;
+                const errorData = await check.json();
+                throw new Error(
+                    errorData.error || "Status request failed"
+                );
+            }
+
+            const data = await check.json();
+
+            if (data.status === "success") {
+                resultBox.replaceChildren(
+                    makeImage(data.image_url),
+                    makeDownload(start.generation_id)
+                );
+                statusText.textContent = "Image generated!";
+                completed = true;
+                break;
+            }
+
+            if (data.status === "failed") {
+                throw new Error(
+                    data.error || "Generation failed"
+                );
+            }
+
+            statusText.textContent = "Generating your image...";
+        }
+
+        if (!completed) {
+            throw new Error(
+                "Still processing. Check history later."
+            );
+        }
+
+    } catch (error) {
+        statusText.textContent = error.message;
+        resultBox.textContent = "Generation not completed.";
+    } finally {
+        button.disabled = false;
+        button.textContent = "✨ Generate Image";
+        await refreshHistory();
+    }
+});
+</script>
+{% endblock %}
