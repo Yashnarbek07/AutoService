@@ -16,4 +16,16 @@ urlpatterns = [
         views.download_image,
         name="download",
     ),
+    path(
+        "history/<int:pk>/delete/",
+        views.delete_image,
+        name="delete",
+),
+
+    path(
+        "history/<int:pk>/delete/",
+        views.delete_image,
+        name="delete",
+),
+
 ]

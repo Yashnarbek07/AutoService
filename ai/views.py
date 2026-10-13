@@ -503,3 +503,52 @@ def download_image(request, pk):
         return HttpResponse(
             "Download failed", status=502
         )
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+
+from .models import ImageGeneration
+
+
+@login_required
+@require_POST
+def delete_image(request, pk):
+    image = get_object_or_404(
+        ImageGeneration,
+        pk=pk,
+        user=request.user,
+    )
+
+    image.delete()
+
+    return JsonResponse({
+        "success": True,
+        "message": "Image deleted successfully."
+    })
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.shortcuts import get_object_or_404
+from django.http import JsonResponse
+
+@login_required
+@require_POST
+def delete_image(request, pk):
+    image = get_object_or_404(
+        ImageGeneration,
+        pk=pk,
+        user=request.user
+    )
+
+    image.delete()
+
+    return JsonResponse({
+        "success": True,
+        "message": "Image deleted successfully."
+    })

@@ -135,6 +135,20 @@
 @media (max-width: 600px) {
     .ai-panel { padding: 18px; }
 }
+.ai-delete-btn {
+    display: block;
+    margin-top: 10px;
+    background: #dc2626;
+    color: #fff;
+    border: 0;
+    border-radius: 10px;
+    padding: 9px 13px;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.ai-delete-btn:hover { background: #b91c1c; }
+.ai-delete-btn:disabled { opacity: .6; cursor: not-allowed; }
 </style>
 {% endblock %}
 
@@ -196,6 +210,12 @@
                             ⬇ Download
                         </a>
                     {% endif %}
+                    <button type="button"
+                            class="ai-delete-btn"
+                            data-image-name="{{ item.prompt }}"
+                            onclick="deleteImage({{ item.id }}, this)">
+                        🗑 Delete
+                    </button>
                 </article>
             {% empty %}
                 <p class="ai-empty">No generations yet.</p>
@@ -250,6 +270,29 @@ function makeDownload(id) {
     return link;
 }
 
+const deleteTemplate = "{% url 'ai:delete' 999999999 %}";
+
+async function deleteImage(id, deleteButton) {
+    const imageName = deleteButton.dataset.imageName || "this image";
+    if (!confirm(`Do you really want to delete "${imageName}"?`)) return;
+
+    deleteButton.disabled = true;
+    try {
+        const response = await fetch(
+            deleteTemplate.replace("999999999", String(id)),
+            {
+                method: "POST",
+                headers: { "X-CSRFToken": getCookie("csrftoken") }
+            }
+        );
+        if (!response.ok) throw new Error("Could not delete image.");
+        await refreshHistory();
+    } catch (error) {
+        alert(error.message);
+        deleteButton.disabled = false;
+    }
+}
+
 async function refreshHistory() {
     const response = await fetch(historyUrl);
     if (!response.ok) return;
@@ -288,6 +331,14 @@ async function refreshHistory() {
         if (item.status === "success") {
             card.appendChild(makeDownload(item.id));
         }
+
+        const deleteButton = document.createElement("button");
+        deleteButton.type = "button";
+        deleteButton.className = "ai-delete-btn";
+        deleteButton.textContent = "🗑 Delete";
+        deleteButton.dataset.imageName = item.prompt;
+        deleteButton.addEventListener("click", () => deleteImage(item.id, deleteButton));
+        card.appendChild(deleteButton);
 
         historyBox.appendChild(card);
     }
