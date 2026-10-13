@@ -51,7 +51,6 @@ local_settings.py
 /staticfiles/
 
 # PyCharm
-.idea/
 
 # VS Code local settings
 .vscode/
